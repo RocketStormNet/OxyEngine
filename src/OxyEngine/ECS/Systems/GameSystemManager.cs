@@ -20,6 +20,12 @@ namespace OxyEngine.Ecs.Systems
     /// </summary>
     public DrawSystem DrawSystem { get; private set; }
 
+    /// <summary>
+    ///   System for physical interactions
+    /// </summary>
+    public PhysicsSystem PhysicsSystem { get; private set; }
+
+
     private GameInstance _gameInstance;
 
     public GameSystemManager(GameInstance gameInstance)
@@ -53,6 +59,7 @@ namespace OxyEngine.Ecs.Systems
     {     
       GenericSystem = new GenericSystem(rootEntity);
       DrawSystem = new DrawSystem(rootEntity);
+      PhysicsSystem = new PhysicsSystem(rootEntity);
     }
 
     public void Init()
@@ -68,6 +75,7 @@ namespace OxyEngine.Ecs.Systems
     public void Update(float dt)
     {
       GenericSystem?.Update(dt);
+      PhysicsSystem?.Update(dt);
     }
 
     public void Draw()
