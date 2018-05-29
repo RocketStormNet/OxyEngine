@@ -3,26 +3,28 @@ using Microsoft.Xna.Framework;
 using OxyEngine.Ecs.Components;
 using OxyEngine.Ecs.Entities;
 using System.Collections.Generic;
+using tainicom.Aether.Physics2D.Common;
 using tainicom.Aether.Physics2D.Dynamics;
 
 namespace OxyEngine.Ecs.Systems
 {
   public class PhysicsSystem : GenericSystem
   {
+    private const int scale = 10;
+
     private World world;
-    private Dictionary<PhysicalComponent, Body> _worldObjects;
+    private Dictionary<PhysicalComponent, Body> worldObjects;
     public PhysicsSystem(GameEntity rootEntity) : base(rootEntity)
     {
       world = new World(new Vector2(0, 10));
-      _worldObjects = new Dictionary<PhysicalComponent, Body>();
-      world.CreateEdge(new Vector2(100, 550), new Vector2(700, 550));
+      worldObjects = new Dictionary<PhysicalComponent, Body>();
     }
 
     public new void Update(float dt)
     {
       UpdateRecursive(RootEntity, dt);
       world.Step(dt);
-      UpdatePositionRecursive(RootEntity);
+      UpdateEntitiesRecursive(RootEntity);
     }
 
     public void UpdateRecursive(GameEntity entity, float dt)
@@ -39,38 +41,55 @@ namespace OxyEngine.Ecs.Systems
       }
     }
 
-    private void UpdatePositionRecursive(GameEntity entity)
+    private void UpdateEntitiesRecursive(GameEntity entity)
     {
-      //((TransformEntity)entity).Transform.Position = new Microsoft.Xna.Framework.Vector2(100, 100);
       foreach (var component in entity.Components)
       {
         if (entity is TransformEntity transformEntity && component is PhysicalComponent physicalComponent)
-          transformEntity.Transform.Position = _worldObjects[physicalComponent].Position;
+        {
+          transformEntity.Transform.Position = worldObjects[physicalComponent].Position * scale;
+          transformEntity.Transform.Rotation = worldObjects[physicalComponent].Rotation;
+        }
       }
       foreach (var child in entity.Children)
       {
-        UpdatePositionRecursive(entity);
+        UpdateEntitiesRecursive(child);
       }
     }
     private void TryAdd(float dt, PhysicalComponent component)
     {
-      if (!_worldObjects.ContainsKey(component))
+      if (!worldObjects.ContainsKey(component))
       {
+        Body body = new Body();
+        body.SleepingAllowed = false;
+        body.BodyType = component.type;
+        var entity = (TransformEntity)component.Entity;
+        body.Position = entity.Transform.GlobalPosition / scale;
+        body.Rotation = entity.Transform.Rotation;
         switch (component)
         {
           case CircleColliderComponent circle:
-            Body body = new Body();
-            body.BodyType = BodyType.Dynamic;
-            body.CreateCircle(circle.Radius, 1);
-            body.SetRestitution(1f);
-            var entity = (TransformEntity)circle.Entity;
-            body.Position = entity.Transform.Position;
-            _worldObjects[component] = body;
-            world.Add(body);
+            body.CreateCircle(circle.Radius / scale, 1);
+            break;
+          case RectangleColliderComponent rectangle:
+            body.CreateRectangle(rectangle.Width / scale, rectangle.Height / scale, 1, Vector2.Zero);
+            break;
+          case PolygonColliderComponent polygon:
+            for (var i = 0; i < polygon.Points.Count; i++)
+            {
+              polygon.Points[i] /= scale;
+            }
+            body.CreatePolygon(new Vertices(polygon.Points), 1);
+            break;
+          case EdgeColliderComponent edge:
+            body.CreateEdge(edge.Start / scale, edge.End / scale);
             break;
           default:
             break;
         }
+        body.SetRestitution(0.5f);
+        worldObjects[component] = body;
+        world.Add(body);
       }
     }
   }

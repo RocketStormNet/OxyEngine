@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Aether.Physics2D, Version=1.3.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Aether.Physics2D.1.3.1\lib\net40\Aether.Physics2D.dll</HintPath>
+    </Reference>
     <Reference Include="MonoGame.Framework, Version=3.6.0.1625, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\..\packages\MonoGame.Framework.Portable.3.6.0.1625\lib\portable-net45+win8+wpa81\MonoGame.Framework.dll</HintPath>
     </Reference>
@@ -57,12 +60,18 @@
     <Compile Include="Ecs\Behaviours\IUpdateable.cs" />
     <Compile Include="Ecs\Components\AudioEffectComponent.cs" />
     <Compile Include="Ecs\Components\AudioEffectPlayMode.cs" />
+    <Compile Include="Ecs\Components\CircleColliderComponent.cs" />
+    <Compile Include="Ecs\Components\PhysicsBodyComponent.cs" />
+    <Compile Include="Ecs\Components\EdgeColliderComponent.cs" />
     <Compile Include="Ecs\Components\GameComponent.cs" />
     <Compile Include="Ecs\Components\CircleComponent.cs" />
     <Compile Include="Ecs\Components\FigureComponent.cs" />
     <Compile Include="Ecs\Components\LineComponent.cs" />
+    <Compile Include="Ecs\Components\PhysicalComponent.cs" />
     <Compile Include="Ecs\Components\PointComponent.cs" />
+    <Compile Include="Ecs\Components\PolygonColliderComponent.cs" />
     <Compile Include="Ecs\Components\PolygonComponent.cs" />
+    <Compile Include="Ecs\Components\RectangleColliderComponent.cs" />
     <Compile Include="Ecs\Components\RectangleComponent.cs" />
     <Compile Include="Ecs\Components\SongComponent.cs" />
     <Compile Include="Ecs\Components\SpriteComponent.cs" />
@@ -73,6 +82,7 @@
     <Compile Include="Ecs\Enums\FigureFillStyle.cs" />
     <Compile Include="Ecs\Interfaces\IConstructable.cs" />
     <Compile Include="Ecs\Interfaces\ITransformable.cs" />
+    <Compile Include="Ecs\Systems\PhysicsSystem.cs" />
     <Compile Include="Ecs\Systems\GameSystem.cs" />
     <Compile Include="Ecs\Systems\DrawSystem.cs" />
     <Compile Include="Ecs\Systems\GameSystemManager.cs" />

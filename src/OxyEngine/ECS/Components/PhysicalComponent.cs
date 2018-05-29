@@ -1,8 +1,15 @@
 ﻿
+using tainicom.Aether.Physics2D.Dynamics;
+
 namespace OxyEngine.Ecs.Components
 {
-  public class PhysicalComponent : GameComponent
+  public abstract class PhysicalComponent : GameComponent
   {
+    public BodyType type { get; set; }
 
+    public PhysicalComponent()
+    {
+      type = BodyType.Static;
+    }
   }
 }
