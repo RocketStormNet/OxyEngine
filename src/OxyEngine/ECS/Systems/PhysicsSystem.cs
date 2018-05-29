@@ -1,8 +1,8 @@
-﻿
-using Microsoft.Xna.Framework;
-using OxyEngine.Ecs.Components;
+﻿using Microsoft.Xna.Framework;
+using OxyEngine.Ecs.Components.Physics;
 using OxyEngine.Ecs.Entities;
 using System.Collections.Generic;
+using tainicom.Aether.Physics2D.Collision.Shapes;
 using tainicom.Aether.Physics2D.Common;
 using tainicom.Aether.Physics2D.Dynamics;
 
@@ -10,34 +10,34 @@ namespace OxyEngine.Ecs.Systems
 {
   public class PhysicsSystem : GenericSystem
   {
-    private const int scale = 10;
+    private const int scale = 30;
 
     private World world;
-    private Dictionary<PhysicalComponent, Body> worldObjects;
+    private Dictionary<PhysicsBodyComponent, Body> worldObjects;
     public PhysicsSystem(GameEntity rootEntity) : base(rootEntity)
     {
       world = new World(new Vector2(0, 10));
-      worldObjects = new Dictionary<PhysicalComponent, Body>();
+      worldObjects = new Dictionary<PhysicsBodyComponent, Body>();
     }
 
     public new void Update(float dt)
     {
-      UpdateRecursive(RootEntity, dt);
+      UpdateRecursive(RootEntity);
       world.Step(dt);
       UpdateEntitiesRecursive(RootEntity);
     }
 
-    public void UpdateRecursive(GameEntity entity, float dt)
+    public void UpdateRecursive(GameEntity entity)
     {
       foreach (var component in entity.Components)
       {
-        if (component is PhysicalComponent physicalComponent)
-          TryAdd(dt, physicalComponent);
+        if (component is PhysicsBodyComponent body)
+          ProcessBody(body);
       }
 
       foreach (var child in entity.Children)
       {
-        UpdateRecursive(child, dt);
+        UpdateRecursive(child);
       }
     }
 
@@ -45,10 +45,10 @@ namespace OxyEngine.Ecs.Systems
     {
       foreach (var component in entity.Components)
       {
-        if (entity is TransformEntity transformEntity && component is PhysicalComponent physicalComponent)
+        if (component is PhysicsBodyComponent body && entity is TransformEntity transformEntity)
         {
-          transformEntity.Transform.Position = worldObjects[physicalComponent].Position * scale;
-          transformEntity.Transform.Rotation = worldObjects[physicalComponent].Rotation;
+          transformEntity.Transform.Position = worldObjects[body].Position * scale;
+          transformEntity.Transform.Rotation = worldObjects[body].Rotation;
         }
       }
       foreach (var child in entity.Children)
@@ -56,30 +56,39 @@ namespace OxyEngine.Ecs.Systems
         UpdateEntitiesRecursive(child);
       }
     }
-    private void TryAdd(float dt, PhysicalComponent component)
+    private void ProcessBody(PhysicsBodyComponent bodyComponent)
     {
-      if (!worldObjects.ContainsKey(component))
+      Body body;
+      if (!worldObjects.ContainsKey(bodyComponent))
       {
-        Body body = new Body();
+        body = world.CreateBody(bodyComponent.Position / scale, bodyComponent.Rotation, bodyComponent.Type);
         body.SleepingAllowed = false;
-        body.BodyType = component.type;
-        var entity = (TransformEntity)component.Entity;
-        body.Position = entity.Transform.GlobalPosition / scale;
-        body.Rotation = entity.Transform.Rotation;
-        switch (component)
+        worldObjects[bodyComponent] = body;
+      }
+      else
+      {
+        body = worldObjects[bodyComponent];
+      }
+      while (bodyComponent.CollidersQueue.Count > 0)
+      {
+        ColliderComponent collider = bodyComponent.CollidersQueue.Dequeue();
+        bodyComponent.Colliders.Add(collider);
+
+        switch (collider)
         {
           case CircleColliderComponent circle:
-            body.CreateCircle(circle.Radius / scale, 1);
+            body.CreateCircle(circle.Radius / scale, 1, circle.Position);
             break;
           case RectangleColliderComponent rectangle:
             body.CreateRectangle(rectangle.Width / scale, rectangle.Height / scale, 1, Vector2.Zero);
             break;
           case PolygonColliderComponent polygon:
+            List<Vector2> vertices = new List<Vector2>();
             for (var i = 0; i < polygon.Points.Count; i++)
             {
-              polygon.Points[i] /= scale;
+              vertices.Add(polygon.Points[i] / scale);
             }
-            body.CreatePolygon(new Vertices(polygon.Points), 1);
+            body.CreatePolygon(new Vertices(vertices), 1);
             break;
           case EdgeColliderComponent edge:
             body.CreateEdge(edge.Start / scale, edge.End / scale);
@@ -88,8 +97,6 @@ namespace OxyEngine.Ecs.Systems
             break;
         }
         body.SetRestitution(0.5f);
-        worldObjects[component] = body;
-        world.Add(body);
       }
     }
   }
